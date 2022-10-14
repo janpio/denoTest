@@ -1,16 +1,20 @@
-import { PrismaClient } from './generated/deno/edge.ts'
+import { PrismaClient } from './generated/client/deno/edge.ts'
 
-const prisma = new PrismaClient({});
-
-export async function getUsers() {
-  // Do a query and disconnect
-  // So we also test that connection is re-established in next query below
-  await prisma.user.findFirst();
-  await prisma.$disconnect();
-
-  // query should re-connect automatically
-  return await prisma.$transaction([
-    prisma.user.findFirst(),
-    prisma.user.findMany(),
-  ]);
+const prisma = new PrismaClient({
+    log: ['query', 'info', 'warn', 'error'],
+  })
+  
+async function main() {
+    const users = await prisma.user.findMany()
+    console.log({ users })
 }
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
